@@ -153,3 +153,35 @@ A：在 **Settings → Pages → Custom domain** 填入你的域名，并按提�
 
 **Q：换主题怎么办？**
 A：`npm install hexo-theme-xxx`，然后把 `_config.yml` 的 `theme` 改成对应主题名。
+
+---
+
+## 七、提交信息规范
+
+本仓库的提交信息**统一使用英文**，并遵循 Linux 内核提交风格：
+
+```
+<subsystem>: <summary>        ← 主题行：不超过 50 字符，动词原形，结尾不加句号
+
+为什么做这个改动（正文每行不超过 72 字符）
+
+Signed-off-by: 姓名 <邮箱>
+```
+
+- 常用子系统前缀：`ci:`（流水线）、`docs:`（文章与文档）、`build:`（构建与依赖）、`theme:`（主题配置）
+- 示例：
+
+  ```
+  ci: build pull requests without deploying
+
+  Run the pipeline on pull requests too, but skip the deploy job for
+  them, so a pull request only validates that the site still builds.
+
+  Signed-off-by: cadywang <109458837+cadywang@users.noreply.github.com>
+  ```
+
+- 本地启用校验钩子（每个克隆只需执行一次），不符合规范的提交会被直接拒绝：
+
+  ```bash
+  git config core.hooksPath .githooks
+  ```
