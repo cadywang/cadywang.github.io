@@ -435,6 +435,8 @@ comments: false
 
 ### 开启评论（giscus）
 
+> 完整步骤（包含两个 ID 的获取方式和 giscus App 的安装）见《[给 Hexo 博客接入 giscus 评论系统](/2026/10/14/add-giscus-comments-to-hexo-blog/)》。
+
 1. 到 <https://giscus.app/zh-CN> 按提示配置（它会引导你给仓库开启 Discussions，并生成 `repo_id`、`category_id`）
 2. 在 `_config.butterfly.yml` 里加：
 
