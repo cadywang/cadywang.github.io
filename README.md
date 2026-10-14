@@ -110,10 +110,24 @@ npm run new -- "标题"  # 按模板新建一篇文章
 
 ### 关于评论
 
-目前未开启评论。推荐用 **giscus**（基于 GitHub Discussions，免费、无广告）：
+已启用 **giscus**（基于 GitHub Discussions，免费、无广告、无需自建后端），评论数据保存在本仓库的 Discussions 中。
 
-1. 到 <https://giscus.app/zh-CN> 按提示配置，得到 `repo_id` / `category_id`；
-2. 把结果填到 `_config.butterfly.yml` 的 `comments` 和 `giscus` 段落中。
+- 配置位置：`_config.butterfly.yml` 的 `comments` 与 `giscus` 两段
+- 当前参数：`repo=cadywang/cadywang.github.io`、分类 `Announcements`、映射 `pathname`（一篇文章对应一个讨论帖）
+
+> ⚠️ 首次启用需要**手动安装一次 giscus 应用**（代码无法代劳）：
+> 打开 <https://github.com/apps/giscus/installations/new> → 选择 `cadywang.github.io` → 点 Install。
+> 未安装时，文章页面评论区会提示 `giscus is not installed on this repository`。
+
+常用调整：
+
+| 想改什么 | 改哪里 |
+| --- | --- |
+| 文章顶部显示评论数 | `comments.count: true` |
+| 评论区延迟加载 | `comments.lazyload: true`（开启后评论数会失效） |
+| 更换讨论分类 | 改 `giscus.category_id` |
+| 评论区语言 | `giscus.option.data-lang`（如 `en`、`zh-CN`） |
+| 关闭某篇文章的评论 | 在该文章 front-matter 写 `comments: false` |
 
 ---
 
