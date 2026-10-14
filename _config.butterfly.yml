@@ -153,3 +153,6 @@ aside:
       icon: fab fa-github
       text: Follow Me
       link: https://github.com/cadywang
+
+# ===== 站点图标（主题默认指向 /img/favicon.png，但主题只自带 favicon.ico）=====
+favicon: /img/favicon.ico
