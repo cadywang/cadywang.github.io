@@ -1,0 +1,122 @@
+# ==============================================================================
+# Butterfly 主题配置：这里只写需要覆盖主题默认值的项
+# 全部可选项见 node_modules/hexo-theme-butterfly/_config.yml
+# 官方文档 https://butterfly.js.org/
+# ==============================================================================
+
+# 导航栏
+nav:
+  logo:
+  display_title: true
+  display_post_title: true
+  fixed: false
+
+# 菜单（格式：名称: /路径/ || 图标）
+menu:
+  首页: / || fas fa-home
+  归档: /archives/ || fas fa-archive
+  标签: /tags/ || fas fa-tags
+  分类: /categories/ || fas fa-folder-open
+  关于: /about/ || fas fa-heart
+
+# 社交图标（按需增删，格式：图标类名: 链接 || 提示文字 || 颜色）
+social:
+  fab fa-github: https://github.com/cadywang || Github || '#24292e'
+  # fas fa-envelope: mailto:you@example.com || Email || '#4a7dbe'
+
+# 头像：想换成自己的图，把图片放到 source/img/ 下，再改这里的路径
+avatar:
+  img: /img/butterfly-icon.png
+  effect: false
+
+# 横幅图：false = 不显示
+# 想开启：把图片放到 source/img/ 下，然后设为 /img/xxx.jpg
+disable_top_img: false
+default_top_img: false
+index_img: false
+archive_img: false
+footer_img: false
+
+# 首页副标题（打字机效果）
+subtitle:
+  enable: true
+  effect: true
+  source: false
+  sub:
+    - 记录学习与实践
+    - 让思考留下痕迹
+    - 慢慢来，比较快
+
+# 文章目录
+toc:
+  post: true
+  page: false
+  number: true
+  expand: false
+  scroll_percent: true
+
+# 文章元信息
+post_meta:
+  page:
+    date_type: created
+    date_format: date
+    categories: true
+    tags: false
+    label: true
+  post:
+    position: left
+    date_type: created
+    date_format: date
+    categories: true
+    tags: true
+    label: true
+
+# 文章底部版权声明
+post_copyright:
+  enable: true
+  decode: false
+  author_href: https://github.com/cadywang
+  license: CC BY-NC-SA 4.0
+  license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+# 字数统计与阅读时长
+wordcount:
+  enable: true
+  post_wordcount: true
+  min2read: true
+  total_wordcount: true
+
+# 访问量统计（不蒜子，免费）
+busuanzi:
+  site_uv: true
+  site_pv: true
+  page_pv: true
+
+# 本地搜索（无需第三方服务）
+search:
+  use: local_search
+  placeholder: 搜索文章
+  local_search:
+    preload: true
+    top_n_per_article: 1
+    unescape: false
+
+# 页脚
+footer:
+  nav:
+  owner:
+    enable: true
+    since: 2026
+  copyright:
+    enable: true
+    version: true
+  custom_text:
+
+# 默认配色：light / dark
+display_mode: light
+
+# 静态资源全部使用本站文件，不依赖外部 CDN（国内访问更稳定）
+CDN:
+  internal_provider: local
+  third_party_provider: local
+  version: true
