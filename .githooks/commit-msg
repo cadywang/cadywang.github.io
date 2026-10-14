@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# commit-msg: 校验提交信息是否符合 Linux 内核风格
+#   1. 必须使用英文（仅 ASCII）
+#   2. 主题行: <subsystem>: <summary>，建议 <=50 字符，硬上限 72
+#   3. 主题行结尾不加句号
+#   4. 有正文时，主题行后必须空一行
+#   5. 正文每行不超过 72 字符
+#   6. 建议添加 Signed-off-by
+#
+msg_file="$1"
+
+# 先剔除注释行与行尾空白，只保留真正的提交信息
+msg=$(sed -e 's/[[:space:]]*$//' -e '/^#/d' "$msg_file")
+subject=$(printf '%s\n' "$msg" | sed -n '1p')
+
+case "$subject" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*) exit 0 ;;
+  "") echo "commit-msg: empty commit message" >&2; exit 1 ;;
+esac
+
+if printf '%s\n' "$msg" | LC_ALL=C grep -nq '[^[:print:][:space:]]'; then
+  echo "commit-msg: 提交信息必须使用英文（检测到非 ASCII 字符）:" >&2
+  printf '%s\n' "$msg" | LC_ALL=C grep -n '[^[:print:][:space:]]' | head -3 >&2
+  exit 1
+fi
+
+if ! printf '%s' "$subject" | grep -Eq '^[a-z][a-z0-9/._-]*(\([^()]*\))?: .+'; then
+  echo "commit-msg: 主题行格式应为 '<subsystem>: <summary>'，例如 'ci: fix deploy job'" >&2
+  exit 1
+fi
+
+len=$(printf '%s' "$subject" | wc -c)
+if [ "$len" -gt 72 ]; then
+  echo "commit-msg: 主题行过长（$len 字符，内核风格要求 <=50，硬上限 72）" >&2
+  exit 1
+elif [ "$len" -gt 50 ]; then
+  echo "commit-msg: 提示：主题行 $len 字符，内核风格建议不超过 50" >&2
+fi
+
+case "$subject" in
+  *.) echo "commit-msg: 主题行结尾不要加句号" >&2; exit 1 ;;
+esac
+
+if [ -n "$(printf '%s\n' "$msg" | sed -n '2p')" ]; then
+  echo "commit-msg: 主题行之后必须空一行" >&2
+  exit 1
+fi
+
+bad=$(printf '%s\n' "$msg" | awk 'NR>2 && length($0)>72 {print "  第"NR"行 ("length($0)" 字符)"}')
+if [ -n "$bad" ]; then
+  echo "commit-msg: 正文行超过 72 字符，请换行：" >&2
+  printf '%s\n' "$bad" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$msg" | grep -q '^Signed-off-by: '; then
+  echo "commit-msg: 提示：内核风格建议在末尾添加 'Signed-off-by: 姓名 <邮箱>'" >&2
+fi
+exit 0
