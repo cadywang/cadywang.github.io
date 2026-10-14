@@ -144,3 +144,12 @@ giscus:
     data-emit-metadata: '0'
     data-input-position: top
     data-loading: lazy
+
+# ===== 侧边栏作者卡片（修正默认指向的占位链接）=====
+aside:
+  card_author:
+    button:
+      enable: true
+      icon: fab fa-github
+      text: Follow Me
+      link: https://github.com/cadywang
