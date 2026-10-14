@@ -2,8 +2,10 @@ name: Build and Deploy Blog
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]        # 合并/推送到 main → 构建并发布
+  pull_request:
+    branches: [main]        # PR → 只构建校验，不发布
+  workflow_dispatch:        # 也支持在 Actions 页面手动触发
 
 permissions:
   contents: read
@@ -11,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -28,13 +30,17 @@ jobs:
       - name: Build site
         run: npx hexo clean && npx hexo generate
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: public
 
   deploy:
+    # PR 不发布：只有 push 到 main 或手动触发才部署
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:
