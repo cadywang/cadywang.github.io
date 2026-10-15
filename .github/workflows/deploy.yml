@@ -1,11 +1,30 @@
-name: Build and Deploy Blog
+name: Publish Blog
+
+# 发布流程（单人模式）：源码先提交，审核通过后再手动触发编译发布。
+#
+#   1. 平时：把文章源码提交到 main（网页提交或本地 push 都行），
+#      review-gate.yml 会自动校验文章格式并试构建，但**不会发布**；
+#   2. 你本人审核：在 GitHub 上看这次 diff，或本地 npm run server 预览；
+#   3. 审核通过后，用下面任一方式触发本工作流，才会真正「编译 + 发布」：
+#        · Actions 页面 → Publish Blog → Run workflow（推荐，可填审核备注）
+#        · 或打一个 publish-* 标签并推送：git push origin publish-2026-10-15
+#
+# 也就是说：**没有你这一下人工触发，任何提交都不会上线。**
 
 on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 要发布的提交（留空 = 当前分支最新提交，通常是 main）
+        required: false
+        default: ''
+      note:
+        description: 审核备注（会写进发布摘要，便于事后追溯）
+        required: false
+        default: ''
   push:
-    branches: [main]        # 合并/推送到 main → 构建并发布
-  pull_request:
-    branches: [main]        # PR → 只构建校验，不发布
-  workflow_dispatch:        # 也支持在 Actions 页面手动触发
+    tags:
+      - 'publish-*'
 
 permissions:
   contents: read
@@ -13,35 +32,83 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
+  group: pages-publish
+  cancel-in-progress: false
 
 jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.sha }}
+          fetch-tags: true
+          fetch-depth: 0
+      - name: 确认要发布的提交已经在 main 上
+        id: target
+        env:
+          NOTE: ${{ github.event.inputs.note }}
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          git fetch --no-tags origin main:refs/remotes/origin/main --force
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo "::error::要发布的提交 $sha 不在 main 上，拒绝发布（请先把源码合并/推送到 main）"
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          {
+            echo "## 发布审核"
+            echo ""
+            echo "| 项目 | 内容 |"
+            echo "| --- | --- |"
+            echo "| 目标提交 | \`${sha}\` |"
+            echo "| 提交说明 | $(git log -1 --pretty=%s) |"
+            echo "| 提交作者 | $(git log -1 --pretty='%an <%ae>') |"
+            echo "| 提交时间 | $(git log -1 --pretty=%ad --date=iso) |"
+            echo "| 审核备注 | ${NOTE:-（未填写）} |"
+            echo "| 触发方式 | ${{ github.event_name }} |"
+            echo "| 触发人 | ${{ github.actor }} |"
+            echo ""
+            echo "> 这一下「Run workflow / 打 tag」就是本次发布的人工审核动作。"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 汇总本次要发布的改动
+        run: node tools/publish-summary.mjs "${{ steps.target.outputs.sha }}"
+
   build:
+    name: build
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+      - name: 发布前全量校验文章
+        run: node tools/check-posts.mjs --all
       - name: Install dependencies
         run: npm ci
       - name: Build site
         run: npx hexo clean && npx hexo generate
       - uses: actions/configure-pages@v5
-        if: github.event_name != 'pull_request'
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name != 'pull_request'
         with:
           path: public
 
   deploy:
-    # PR 不发布：只有 push 到 main 或手动触发才部署
-    if: github.event_name != 'pull_request'
-    needs: build
+    name: deploy
+    needs: [verify, build]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

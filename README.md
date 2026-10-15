@@ -4,19 +4,26 @@
 
 - 线上地址：<https://cadywang.github.io>
 - 仓库地址：<https://github.com/cadywang/cadywang.github.io>
+- 发布规则：[REVIEW_POLICY.md](REVIEW_POLICY.md)——**源码先提交，本人审核通过后手动触发才编译发布**
 - 工作流：[.github/workflows/deploy.yml](.github/workflows/deploy.yml)
 
 ---
 
-## 一、日常使用：只需要放文档
+## 一、日常使用：写文章 → 审核 → 发布
 
-你不需要懂前端，也不需要本地装任何东西，**只要往 `source/_posts/` 目录上传 Markdown 文件**，博客就会自动更新。
+你不需要懂前端，也不需要本地装任何东西，**只要往 `source/_posts/` 目录上传 Markdown 文件**，提交后自己审核一遍，再在 Actions 里点一次发布就能上线（规则见 [REVIEW_POLICY.md](REVIEW_POLICY.md)）。
 
-### 在网页上发一篇新文章
+### 发一篇新文章（源码先提交，审核后再发布）
+
+> 本站是**单人模式**：源码提交到 `main` **不会**立刻上线。
+> 你自己审核通过后，在 Actions 里手动触发一次发布，才会编译并上线。
+> 完整规则见 [REVIEW_POLICY.md](REVIEW_POLICY.md)。
+
+**第一步：提交文章源码**
 
 1. 打开 <https://github.com/cadywang/cadywang.github.io/tree/main/source/_posts>
 2. 点右上角 **Add file → Create new file**
-3. 文件名填 `my-new-post.md`（**建议用英文/拼音**，它会出现在文章网址里）
+3. 文件名填 `my-new-post.md`（建议用英文/拼音，它会出现文章网址里）
 4. 内容格式：
 
    ```markdown
@@ -30,10 +37,25 @@
    正文，正常写 Markdown 即可。
    ```
 
-5. 页面底部点 **Commit changes**
-6. 大约 1～2 分钟后，刷新 <https://cadywang.github.io> 即可看到
+5. 页面底部选 **Commit directly to the main branch**，点 **Commit changes**
 
-> 修改已有文章：点开该文件 → 右上角铅笔图标 → 改完提交，同样会自动发布。
+**第二步：等自动校验，然后自己审核**
+
+6. 仓库 **Actions** 里 `Review Gate` 会跑 `validate-posts`（文章格式）和 `build-check`（能否构建），全绿说明没问题
+7. 审核方式随你挑：看这次提交的 diff、在 GitHub 上读一遍源码，或本地 `npm run server` 预览效果
+
+**第三步：审核通过 → 手动触发发布**
+
+8. 打开 <https://github.com/cadywang/cadywang.github.io/actions/workflows/deploy.yml>
+9. 点 **Run workflow** → 分支选 `main` →（可选）填一句审核备注 → 点 **Run workflow**
+10. 看这次运行的 **Summary** 里「本次发布内容」，确认要发的东西没错，再等 `build` / `deploy` 变绿
+11. 约 1～2 分钟刷新 <https://cadywang.github.io> 即可看到
+
+> 命令行等价操作：`gh workflow run deploy.yml`；或者打标签 `git tag publish-2026-10-15 && git push origin publish-2026-10-15`。
+> 两种方式都只会发布 `main` 上已有的提交，未进 main 的东西发布不出去。
+>
+> 修改已有文章同理：改完提交 → 校验变绿 → 手动发布一次。
+> 还没打算发的稿子：在 front-matter 加 `draft: true`，它不会被生成。
 
 ### front-matter 各项含义
 
@@ -133,19 +155,26 @@ npm run new -- "标题"  # 按模板新建一篇文章
 
 ## 五、发布原理
 
-```
-提交 Markdown 到 main 分支
-        │
-        ▼
-GitHub Actions（ubuntu-latest）
-  1. checkout 代码
-  2. 安装 Node 20 + npm 依赖
-  3. npx hexo generate  →  生成 public/ 静态文件
-  4. 上传产物并发布到 GitHub Pages
-        │
-        ▼
-https://cadywang.github.io 自动更新
-```
+提交文章源码到 main（直接提交或走 PR 都行）
+         │
+         ▼
+Review Gate（自动校验，不发布）
+  validate-posts   文章格式 / 文件名 / 本地资源
+  pr-checklist     走 PR 时的审查清单
+  build-check      站点能否构建成功
+         │
+         ▼
+你本人审核（看 diff / 本地预览）
+         │  审核通过
+         ▼
+Actions → Publish Blog → Run workflow（人工触发，或推 publish-* 标签）
+  verify       确认要发布的提交已经在 main 上
+  全量校验     check-posts --all
+  构建         npm ci + hexo generate
+  发布         deploy-pages → GitHub Pages
+         │
+         ▼
+https://cadywang.github.io 更新
 
 查看每次发布是否成功：仓库页 **Actions** 标签。
 
