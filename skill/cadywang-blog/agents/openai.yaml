@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cadywang Blog"
+  short_description: "把工作整理成中文技术博客并发布到 cadywang.github.io"
+  brand_color: "#1F6FEB"
+  default_prompt: "Use $cadywang-blog to turn what we just did into a blog post and publish it to my blog."
+policy:
+  allow_implicit_invocation: true
