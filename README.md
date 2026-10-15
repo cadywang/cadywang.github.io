@@ -4,7 +4,7 @@
 
 - 线上地址：<https://cadywang.github.io>
 - 仓库地址：<https://github.com/cadywang/cadywang.github.io>
-- 发布规则：[REVIEW_POLICY.md](REVIEW_POLICY.md)——**源码先提交，本人审核通过后手动触发才编译发布**
+- 发布规则：[REVIEW_POLICY.md](REVIEW_POLICY.md)——**必须开 PR + CI 全绿才能进 `main`（谁都绕不过），再经本人手动触发才编译发布**
 - 工作流：[.github/workflows/deploy.yml](.github/workflows/deploy.yml)
 
 ---
@@ -13,13 +13,15 @@
 
 你不需要懂前端，也不需要本地装任何东西，**只要往 `source/_posts/` 目录上传 Markdown 文件**，提交后自己审核一遍，再在 Actions 里点一次发布就能上线（规则见 [REVIEW_POLICY.md](REVIEW_POLICY.md)）。
 
-### 发一篇新文章（源码先提交，审核后再发布）
+### 发一篇新文章（必须走 PR，之后才谈发布）
 
-> 本站是**单人模式**：源码提交到 `main` **不会**立刻上线。
-> 你自己审核通过后，在 Actions 里手动触发一次发布，才会编译并上线。
+> **两道闸门，都绕不过：**
+> ① `main` 有分支保护（`enforce_admins: true` + Bypass 留空）——**谁都不能直接 push `main`，包括你自己**；
+>    所有改动都必须开 PR，并且 CI 全绿才能合并。
+> ② 合并 ≠ 上线——合并之后还要你本人手动触发一次发布，才会编译上线。
 > 完整规则见 [REVIEW_POLICY.md](REVIEW_POLICY.md)。
 
-**第一步：提交文章源码**
+**第一步：开分支、提交文章源码（以 PR 形式）**
 
 1. 打开 <https://github.com/cadywang/cadywang.github.io/tree/main/source/_posts>
 2. 点右上角 **Add file → Create new file**
@@ -37,24 +39,42 @@
    正文，正常写 Markdown 即可。
    ```
 
-5. 页面底部选 **Commit directly to the main branch**，点 **Commit changes**
+5. 页面底部选 **`Create a new branch for this commit and start a pull request`**，点 **Propose changes** → **Create pull request**
+   （**不要**选 `Commit directly to the main branch`——`main` 已禁止直推，会被拒绝）
+6. 按模板把「发布审查清单」逐条勾选：少勾一项，`pr-checklist` 就会红
 
-**第二步：等自动校验，然后自己审核**
+**第二步：等 CI 变绿，然后自己审核**
 
-6. 仓库 **Actions** 里 `Review Gate` 会跑 `validate-posts`（文章格式）和 `build-check`（能否构建），全绿说明没问题
-7. 审核方式随你挑：看这次提交的 diff、在 GitHub 上读一遍源码，或本地 `npm run server` 预览效果
+7. `Review Gate` 的三个 job 都是**必需检查**：`validate-posts`（文章格式）、`pr-checklist`（清单）、`build-check`（能否构建）
+8. 审核方式随你挑：看 PR 的 diff、在 GitHub 上读一遍源码，或本地 `npm run server` 预览
 
-**第三步：审核通过 → 手动触发发布**
+**第三步：合并 PR（这一步之后仍然没有上线）**
 
-8. 打开 <https://github.com/cadywang/cadywang.github.io/actions/workflows/deploy.yml>
-9. 点 **Run workflow** → 分支选 `main` →（可选）填一句审核备注 → 点 **Run workflow**
-10. 看这次运行的 **Summary** 里「本次发布内容」，确认要发的东西没错，再等 `build` / `deploy` 变绿
-11. 约 1～2 分钟刷新 <https://cadywang.github.io> 即可看到
+9. CI 全绿后点 **Merge pull request**——单人模式 `required_approving_review_count: 0`，**不要求别人批准**；
+   GitHub 不允许自己批准自己的 PR，"审查"就是你合并前自己把 diff 过一遍
 
-> 命令行等价操作：`gh workflow run deploy.yml`；或者打标签 `git tag publish-2026-10-15 && git push origin publish-2026-10-15`。
-> 两种方式都只会发布 `main` 上已有的提交，未进 main 的东西发布不出去。
->
-> 修改已有文章同理：改完提交 → 校验变绿 → 手动发布一次。
+**第四步：手动触发发布（真正上线）**
+
+10. 打开 <https://github.com/cadywang/cadywang.github.io/actions/workflows/deploy.yml>
+11. 点 **Run workflow** → 分支选 `main` →（可选）填一句审核备注 → 点 **Run workflow**
+12. 看这次运行的 **Summary** 里「本次发布内容」，确认要发的东西没错，再等 `build` / `deploy` 变绿
+13. 约 1～2 分钟刷新 <https://cadywang.github.io> 即可看到
+
+命令行等价操作：
+
+```bash
+git switch -c post/my-new-article        # main 不能直推，先开分支
+# 写文章、改配置 …
+npm run check:posts && npm run build     # 本地自查（可选，但推荐）
+git add -A && git commit -m "post: add my new article"
+git push -u origin post/my-new-article   # 推送后终端会打印开 PR 的链接
+gh pr checks --watch                     # 等三个必需检查全绿
+gh pr merge --squash                     # 合并（也可以网页点 Merge pull request）
+gh workflow run deploy.yml               # 审核通过 → 手动触发发布
+# 另一种触发方式：git tag publish-2026-10-15 && git push origin publish-2026-10-15
+```
+
+> 修改已有文章同理：改完 → 开 PR → 合并 → 手动发布一次。
 > 还没打算发的稿子：在 front-matter 加 `draft: true`，它不会被生成。
 
 ### front-matter 各项含义
@@ -155,17 +175,17 @@ npm run new -- "标题"  # 按模板新建一篇文章
 
 ## 五、发布原理
 
-提交文章源码到 main（直接提交或走 PR 都行）
+开分支提交文章源码 → 开 PR（main 已禁止直接推送）
          │
          ▼
-Review Gate（自动校验，不发布）
+Review Gate（必需检查，在 PR 上跑）
   validate-posts   文章格式 / 文件名 / 本地资源
-  pr-checklist     走 PR 时的审查清单
+  pr-checklist     发布审查清单逐条勾选
   build-check      站点能否构建成功
          │
          ▼
-你本人审核（看 diff / 本地预览）
-         │  审核通过
+CI 全绿 → 你自己把 diff 看一遍 → 合并 PR
+         │
          ▼
 Actions → Publish Blog → Run workflow（人工触发，或推 publish-* 标签）
   verify       确认要发布的提交已经在 main 上
