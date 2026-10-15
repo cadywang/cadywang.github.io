@@ -1,0 +1,70 @@
+name: Review Gate
+
+# 这是「发布前的自动校验」，只校验、不发布：
+#   validate-posts —— 文章的 front-matter / 文件名 / 本地资源校验
+#   pr-checklist   —— 走 PR 时，PR 描述里的「发布审查清单」必须逐条勾选
+#   build-check    —— 确认站点能构建（npm ci + hexo generate）
+#
+# 真正上线由 deploy.yml 手动触发（Actions → Publish Blog → Run workflow），
+# 所以这里失败只是提醒你「先修好再发布」。完整规则见 REVIEW_POLICY.md。
+#
+# 注意：job 名字（validate-posts / pr-checklist / build-check）如果要写进
+# 仓库规则集的必需检查里，改名必须同步更新 REVIEW_POLICY.md。
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-posts:
+    name: validate-posts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 校验文章格式
+        env:
+          BASE_REF: "${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}"
+        run: node tools/check-posts.mjs --base "$BASE_REF"
+
+  pr-checklist:
+    name: pr-checklist
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 校验 PR 审查清单
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node tools/check-pr.mjs
+
+  build-check:
+    name: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build site
+        run: npx hexo clean && npx hexo generate

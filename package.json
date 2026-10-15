@@ -7,7 +7,8 @@
     "clean": "hexo clean",
     "build": "hexo generate",
     "server": "hexo server",
-    "new": "hexo new"
+    "new": "hexo new",
+    "check:posts": "node tools/check-posts.mjs --all"
   },
   "hexo": {
     "version": "7.3.0"

@@ -1,0 +1,8 @@
+# 发布审查：source/_posts/ 下的任何改动都需要审查人批准。
+#
+# 注意：CODEOWNERS 自己不会阻止合并，必须在仓库规则里勾选
+#   Settings → Rules → Rulesets → Require review from Code Owners
+# （详见 REVIEW_POLICY.md）。单人仓库要先加一个协作者账号，
+# 否则自己的 PR 永远拿不到批准，会被自己的规则卡死。
+
+/source/_posts/        @cadywang
