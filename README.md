@@ -124,7 +124,8 @@ npm run new -- "标题"  # 按模板新建一篇文章
 ├── scaffolds/                     # 新建文章的模板
 ├── _config.yml                    # 站点配置：标题、URL、语言、分页等
 ├── _config.butterfly.yml          # 主题配置：菜单、头像、搜索、统计等
-└── package.json                   # 依赖清单
+├── package.json                   # 依赖清单
+└── skill/cadywang-blog/           # 写文章用的 Codex skill（见第八节）
 ```
 
 ---
@@ -248,3 +249,28 @@ Signed-off-by: 姓名 <邮箱>
   ```bash
   git config core.hooksPath .githooks
   ```
+
+---
+
+## 八、写作 skill（把任何内容一键写成博客）
+
+仓库里带了一个可直接安装的 Codex skill：`skill/cadywang-blog/`。它把
+「取材 → 写作 → 本地校验 → 提 PR → 合并 → 触发发布」整条流程固化下来，省得每次重新交代规矩，
+也保证文章不会跳过 front-matter、校验或审查这几步。
+
+```bash
+# 安装（幂等，可重复执行）：把仓库里的 skill 同步到 ~/.codex/skills/
+bash skill/cadywang-blog/scripts/install.sh
+```
+
+装好之后，直接对 Codex 说「把这件事写成博客发到我博客」即可（也可以显式 `$cadywang-blog` 调用）。
+
+| 路径 | 用途 |
+| --- | --- |
+| `references/style-guide.md` | 本站文风、章节骨架、front-matter 规范、反面清单 |
+| `references/publish-flow.md` | 三道闸门、必需检查、失败排查 |
+| `assets/post-template.md` | 文章骨架模板（`new-post.sh` 用它渲染） |
+| `scripts/new-post.sh` | 生成文章骨架 |
+| `scripts/check.sh` | 本地校验（= CI 的 `validate-posts` + `build-check`） |
+| `scripts/publish.sh` | 提 PR / 推 `publish-*` 标签触发发布（支持 `--dry-run`） |
+| `scripts/install.sh` | 同步安装到 `$CODEX_HOME/skills/` |
