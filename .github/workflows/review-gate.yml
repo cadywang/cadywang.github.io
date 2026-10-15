@@ -14,6 +14,8 @@ name: Review Gate
 on:
   pull_request:
     branches: [main]
+    # 编辑 PR 描述（勾选审查清单）也要重跑，否则勾完没人重新校验这一条
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
