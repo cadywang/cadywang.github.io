@@ -7,7 +7,7 @@ categories: [教程]
 
 嵌入式调试里有个很常见的尴尬：**板子在你手上，但串口线插在另一台机器上。**
 
-我在做 RTD1761 机顶盒（Yocto）调试时就是这种情况——开发板接在一台 Windows 机器的 `COM3` 上，
+我在做一台 Yocto 机顶盒调试时就是这种情况——开发板接在一台 Windows 机器的 `COM3` 上，
 而我真正干活的环境是另一台 Linux server。传统的做法是 VNC 过去开串口终端、或者手工 `scp` 来回搬文件，
 既慢又没法做自动化。
 
@@ -143,7 +143,7 @@ if [ "$(md5sum '/tmp/.devctl_blk' | cut -d" " -f1)" = "<该块的 md5>" ]; then 
 
 ## 四、实测数据
 
-一次真实调试现场（client = Windows，`COM3@460800`；设备 = Realtek RTD1761 / Yocto；
+一次真实调试现场（client = Windows，`COM3@460800`；设备 = Yocto 机顶盒；
 server 经反向 SSH 隧道操作）：
 
 | 项目 | 结果 |
