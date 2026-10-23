@@ -1,0 +1,21 @@
+{
+  "name": "cadywang.github.io",
+  "description": "cadywang 的个人博客（Hexo + Butterfly + GitHub Pages）",
+  "homepage": "https://cadywang.github.io",
+  "private": false,
+  "has_issues": true,
+  "has_projects": false,
+  "has_wiki": false,
+  "has_discussions": true,
+  "allow_squash_merge": false,
+  "allow_merge_commit": false,
+  "allow_rebase_merge": true,
+  "allow_auto_merge": false,
+  "delete_branch_on_merge": true,
+  "topics": [
+    "hexo",
+    "blog",
+    "github-pages",
+    "butterfly"
+  ]
+}

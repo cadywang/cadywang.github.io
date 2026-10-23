@@ -20,11 +20,12 @@
 
 | 检查 | 来自 | 查什么 |
 | --- | --- | --- |
+| `Hygiene (encoding, line endings, syntax)` | review-gate.yml | BOM/CRLF、Python/shell/Node 语法、YAML、commit 规范 + DCO |
 | `validate-posts` | review-gate.yml | front-matter 必填项、文件名 slug、正文引用的本地图片是否存在 |
 | `pr-checklist` | review-gate.yml | PR 描述里的「发布审查清单」是否逐条勾选 |
 | `build-check` | review-gate.yml | `npm ci` + `hexo generate` 能否成功 |
 
-配置是 `strict: true`：PR 还必须追上最新 `main` 才能合并。
+配置是 `strict: true`：PR 还必须追上最新 `main` 才能合并。仓库只允许 **Rebase and merge**。
 
 ## 三、日常发布四步
 
@@ -33,20 +34,27 @@
 git switch -c post/my-new-article
 vim source/_posts/my-new-article.md
 npm run check:posts && npm run build      # 本地自查（可选，但推荐）
-git add -A && git commit -m "post: add my new article"
+git add -A && git commit -s -m "post: add my new article"   # -s：DCO 签名
 git push -u origin post/my-new-article    # 推送后终端会打印开 PR 的链接
 
-# 2) 开 PR → 等三个必需检查全绿 → 自己把 diff 看一遍
+# 2) 开 PR → 等四个必需检查全绿 → 自己把 diff 看一遍
 gh pr checks --watch
 npm run server                            # 也可以本地预览 http://localhost:4000
 
 # 3) 合并 PR（这一步之后仍然没有上线）
-gh pr merge --squash
+gh pr merge --rebase
 
 # 4) 审核通过 → 手动触发发布（这一步才真正上线）
 gh workflow run deploy.yml
 # 或者：git tag publish-2026-10-15 && git push origin publish-2026-10-15
 ```
+
+### 提交规范（内核风格 + DCO）
+
+* 格式：`<subsystem>: <祈使句摘要>`，≤72 列，结尾不加句号；subsystem 如 `post:`、`docs:`、`ci:`、`skill:`；
+* 正文说明 what/why，72~75 列折行；不要用 `feat:` / `fix:` 这类 conventional-commit 标签；
+* 每个提交带 `Signed-off-by:`——`bash tools/dev-setup.sh` 打开 `format.signOff` 后自动加，也可显式 `git commit -s`；
+* CI 的 `Hygiene` job 会按 PR 范围检查上面每一条；本地钩子（`tools/git-hooks/commit-msg`）提前拦截。
 
 网页操作版见 [README.md](README.md) 第一节的逐步说明（第一步就要选
 `Create a new branch for this commit and start a pull request`）。
@@ -57,7 +65,7 @@ GitHub **不允许作者批准自己的 PR**。本站只有你一个账号，所
 
 * `required_approving_review_count = 0`：PR 必须开、CI 必须绿，但**不要求别人批准**——
   这样你自己的 PR 也能合并，不会把自己锁死；
-* 「审查」落在两处：**CI 的三个必需检查** + **你合并前自己看一遍 diff**；
+* 「审查」落在两处：**CI 的四个必需检查** + **你合并前自己看一遍 diff**；
 * 如果以后加了协作者，把批准数提到 1（并打开 `require_code_owner_reviews`）即可，
   [.github/CODEOWNERS](.github/CODEOWNERS) 已经写好。
 
@@ -77,7 +85,9 @@ GitHub **不允许作者批准自己的 PR**。本站只有你一个账号，所
 | 情况 | 结果 |
 | --- | --- |
 | 直接 `git push` 到 `main` | **被分支保护拒绝**（`enforce_admins: true`，没人是例外） |
-| PR 里 `validate-posts` / `pr-checklist` / `build-check` 任一红 | 不能合并 |
+| PR 里 `Hygiene` / `validate-posts` / `pr-checklist` / `build-check` 任一红 | 不能合并 |
+| commit 不符合内核风格或缺少 `Signed-off-by:` | `Hygiene` 红，不能合并 |
+| 用 Squash 合并 | 被仓库设置拒绝（只允许 Rebase and merge） |
 | PR 落后于最新 `main` | 不能合并（`strict`），先 rebase / update branch |
 | 要发布的提交不在 `main` 上（手动指定了别的 ref） | `verify` 失败，拒绝发布 |
 | 任何一篇文章校验不通过 | 发布前的全量校验失败，拒绝发布 |
@@ -103,9 +113,10 @@ npm run server                                  # 本地预览 http://localhost:
 
 ## 九、改动规则时的注意事项
 
-- 分支保护的实际配置在 GitHub 的 Ruleset 与经典分支保护里（**不在本仓库文件里**），
+- 期望的分支保护与仓库设置写在 `governance/branch-protection.json` 与
+  `governance/repository-settings.json`，用 `tools/create-github-repo.ps1` 施加（幂等，支持 `-DryRun`）；
   改完请同步更新本文档第一节的表格。
-- 工作流里的 **job 名称**（`validate-posts`、`pr-checklist`、`build-check`）就是必需检查的名字，
+- 工作流里的 **job 名称**（`Hygiene`、`validate-posts`、`pr-checklist`、`build-check`）就是必需检查的名字，
   改名会让规则失配，必须同步更新本文档与 GitHub 的必需检查配置。
 - 发布入口是 **`publish-*` 标签前缀**（`deploy.yml` 的 `on.push.tags`）与手动 `workflow_dispatch`，
   改这两处等于改发布入口，务必同步更新本文档和 README。

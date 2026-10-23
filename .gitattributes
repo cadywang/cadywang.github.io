@@ -1,0 +1,7 @@
+# Pin every text file to LF so a Windows checkout matches a Linux one.
+* text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

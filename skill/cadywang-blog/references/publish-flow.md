@@ -15,8 +15,8 @@ bash scripts/check.sh                    # npm run check:posts + hexo generate
 cd "$BLOG_REPO" && npm run server        # 本地预览 http://localhost:4000
 
 bash scripts/publish.sh my-slug          # 建分支 + 提交 + 推送，打印 PR 链接
-gh pr checks --watch                     # 等三个必需检查全绿
-gh pr merge --squash                     # 合并（0 approvals，可以自己合）
+gh pr checks --watch                     # 等四个必需检查全绿
+gh pr merge --rebase                     # 合并（0 approvals，可以自己合；只允许 rebase）
 
 bash scripts/publish.sh --tag            # 推 publish-<日期>-<slug> 标签 → 触发发布
 ```
