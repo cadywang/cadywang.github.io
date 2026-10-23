@@ -75,7 +75,7 @@ jobs:
             echo ""
             echo "> 这一下「Run workflow / 打 tag」就是本次发布的人工审核动作。"
           } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
       - name: 汇总本次要发布的改动
@@ -89,7 +89,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.verify.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
