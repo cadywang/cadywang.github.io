@@ -66,14 +66,17 @@
 git switch -c post/my-new-article        # main 不能直推，先开分支
 # 写文章、改配置 …
 npm run check:posts && npm run build     # 本地自查（可选，但推荐）
-git add -A && git commit -m "post: add my new article"
+git add -A && git commit -s -m "post: add my new article"   # -s：带 Signed-off-by
 git push -u origin post/my-new-article   # 推送后终端会打印开 PR 的链接
-gh pr checks --watch                     # 等三个必需检查全绿
-gh pr merge --squash                     # 合并（也可以网页点 Merge pull request）
+gh pr checks --watch                     # 等四个必需检查全绿
+gh pr merge --rebase                     # 合并（也可以网页点 Rebase and merge）
 gh workflow run deploy.yml               # 审核通过 → 手动触发发布
 # 另一种触发方式：git tag publish-2026-10-15 && git push origin publish-2026-10-15
 ```
 
+> 仓库只允许 **Rebase and merge**（不要 Squash）：PR 里的提交会原样落到 `main`，
+> 所以 commit 信息必须一开始就写对，并带 `Signed-off-by:`（`bash tools/dev-setup.sh` 之后自动加）。
+>
 > 修改已有文章同理：改完 → 开 PR → 合并 → 手动发布一次。
 > 还没打算发的稿子：在 front-matter 加 `draft: true`，它不会被生成。
 
@@ -244,10 +247,10 @@ Signed-off-by: 姓名 <邮箱>
   Signed-off-by: cadywang <109458837+cadywang@users.noreply.github.com>
   ```
 
-- 本地启用校验钩子（每个克隆只需执行一次），不符合规范的提交会被直接拒绝：
+- 本地启用校验（每个克隆只需执行一次）：
 
   ```bash
-  git config core.hooksPath .githooks
+  bash tools/dev-setup.sh     # 开启 format.signOff + 安装 commit-msg 钩子
   ```
 
 ---

@@ -1,15 +1,16 @@
 name: Review Gate
 
 # 这是「发布前的自动校验」，只校验、不发布：
+#   hygiene       —— 编码/行尾/语法 + commit 规范 + DCO
 #   validate-posts —— 文章的 front-matter / 文件名 / 本地资源校验
-#   pr-checklist   —— 走 PR 时，PR 描述里的「发布审查清单」必须逐条勾选
-#   build-check    —— 确认站点能构建（npm ci + hexo generate）
+#   pr-checklist  —— 走 PR 时，PR 标题与描述里的「发布审查清单」必须合规
+#   build-check   —— 确认站点能构建（npm ci + hexo generate）
 #
 # 真正上线由 deploy.yml 手动触发（Actions → Publish Blog → Run workflow），
 # 所以这里失败只是提醒你「先修好再发布」。完整规则见 REVIEW_POLICY.md。
 #
-# 注意：job 名字（validate-posts / pr-checklist / build-check）如果要写进
-# 仓库规则集的必需检查里，改名必须同步更新 REVIEW_POLICY.md。
+# 注意：job 名字（hygiene / validate-posts / pr-checklist / build-check）如果要写进
+# 仓库规则集的必需检查里，改名必须同步更新 REVIEW_POLICY.md 与 governance/。
 
 on:
   pull_request:
@@ -27,6 +28,92 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  hygiene:
+    name: Hygiene (encoding, line endings, syntax)
+    runs-on: ubuntu-latest
+    steps:
+      # The commit style gate walks the pull request range, so it needs real
+      # history; the default depth 1 clone cannot resolve base..head.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Reject UTF-8 BOM
+        run: |
+          bad=0
+          while IFS= read -r -d '' f; do
+            if [ "$(head -c 3 "$f" | od -An -tx1 | tr -d ' \n')" = "efbbbf" ]; then
+              echo "::error file=$f::has UTF-8 BOM"; bad=1
+            fi
+          done < <(find . -path ./.git -prune -o -path ./public -prune -o -type f \( -name '*.py' -o -name '*.sh' -o -name '*.md' -o -name '*.yml' -o -name '*.mjs' \) -print0)
+          exit "$bad"
+
+      - name: Reject CRLF in md / py / sh / yml / mjs
+        run: |
+          bad=0
+          for pat in '*.md' '*.py' '*.sh' '*.yml' '*.mjs'; do
+            while IFS= read -r -d '' f; do
+              if LC_ALL=C grep -q "$(printf '\r')" "$f"; then
+                echo "::error file=$f::CRLF line ending"; bad=1
+              fi
+            done < <(find . -path ./.git -prune -o -path ./public -prune -o -type f -name "$pat" -print0)
+          done
+          exit "$bad"
+
+      - name: Python syntax
+        run: python3 -m compileall -q tools tests
+
+      - name: Node syntax
+        run: |
+          for f in $(git ls-files '*.mjs'); do
+            node --check "$f" && echo "node --check OK: $f"
+          done
+
+      - name: Shell syntax
+        run: |
+          for f in $(git ls-files '*.sh'); do
+            bash -n "$f" && echo "bash -n OK: $f"
+          done
+
+      - name: YAML sanity (no tabs)
+        run: |
+          for f in $(git ls-files '*.yml' '*.yaml'); do
+            if grep -Pn '\t' "$f" > /dev/null; then echo "::error file=$f::tab character in YAML"; exit 1; fi
+          done
+          echo "yaml sanity OK"
+
+      - name: Gate self-tests
+        run: |
+          python3 tests/test_check_commits.py
+          node tests/test_check_pr.mjs
+
+      - name: Commit style (Linux kernel guidelines + DCO)
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 tools/check-commits.py --github-env --skip-bots
+          else
+            before="${{ github.event.before }}"
+            if [ -n "$before" ] && [ "$before" != "0000000000000000000000000000000000000000" ]; then
+              python3 tools/check-commits.py --range "${before}..${GITHUB_SHA}" --skip-bots
+            else
+              python3 tools/check-commits.py --skip-bots
+            fi
+          fi
+
+      - name: YAML parse
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pyyaml
+          python3 -c "import glob,yaml; files=glob.glob('.github/**/*.yml',recursive=True)+glob.glob('.github/**/*.yaml',recursive=True); [list(yaml.safe_load_all(open(f,encoding='utf-8'))) for f in files]; print('yaml parsed:', len(files))"
+
   validate-posts:
     name: validate-posts
     runs-on: ubuntu-latest
@@ -51,10 +138,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: 校验 PR 审查清单
+      - name: 校验 PR 标题与审查清单
         env:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: node tools/check-pr.mjs
 
   build-check:

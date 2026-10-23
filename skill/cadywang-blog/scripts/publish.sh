@@ -6,7 +6,7 @@
 #   bash publish.sh --dry-run ...         只打印将执行的命令，不真的执行
 #
 # 注意：main 有分支保护（enforce_admins: true），不能直推；必须走 PR，
-# 且合并前三个必需检查要全绿。触发发布前请先得到用户确认。
+# 且合并前四个必需检查要全绿（只允许 rebase 合并）。触发发布前请先得到用户确认。
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$DIR/_common.sh"
@@ -72,7 +72,7 @@ run git -C "$REPO" add "source/_posts/$slug.md"
 if [ -d "$REPO/source/_posts/$slug" ]; then
   run git -C "$REPO" add "source/_posts/$slug"
 fi
-run git -C "$REPO" commit -m "$msg"
+run git -C "$REPO" commit -s -m "$msg"
 
 echo
 echo "== 4) 推送 =="
@@ -82,7 +82,7 @@ echo
 echo "打开 PR（记得把描述里的「发布审查清单」逐条勾选，并把本地校验输出贴上去）："
 echo "  https://github.com/cadywang/cadywang.github.io/pull/new/$branch"
 echo
-echo "等检查： gh pr checks --watch     合并： gh pr merge --squash"
+echo "等检查： gh pr checks --watch     合并： gh pr merge --rebase"
 echo "合并之后触发发布： bash \"$DIR/publish.sh\" --tag"
 echo
 echo "提交信息必须符合仓库规范（ASCII、'<subsystem>: <祈使句摘要>'）；"

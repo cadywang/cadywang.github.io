@@ -1,0 +1,27 @@
+{
+  "_comment": "PUT /repos/{owner}/{repo}/branches/main/protection payload. Applied by tools/create-github-repo.ps1. Every change to main has to arrive as a pull request with all required checks green; nobody, admins included, can push or rewrite main directly. Solo maintainer mode: required_approving_review_count is 0 because GitHub never lets an author approve their own pull request. Publishing is a separate, manual gate (deploy.yml); see REVIEW_POLICY.md.",
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "Hygiene (encoding, line endings, syntax)",
+      "validate-posts",
+      "pr-checklist",
+      "build-check"
+    ]
+  },
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 0,
+    "require_last_push_approval": false
+  },
+  "enforce_admins": true,
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": true,
+  "lock_branch": false,
+  "allow_fork_syncing": true
+}

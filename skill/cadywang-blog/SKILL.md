@@ -23,7 +23,7 @@ metadata:
 2. **文章必须过校验。** `npm run check:posts` 与 `npx hexo generate` 都要通过：
    front-matter 必填 `title`/`date`/`tags`，文件名必须是全小写 slug，正文引用的本地图片必须真实存在。
 3. **发布链路不能绕过。** `main` 有分支保护（`enforce_admins: true`，直推会被 GH006 拒绝）：
-   必须开分支 → PR → 三个必需检查全绿 → 合并；合并之后还要**人工触发一次发布**才会真正上线。
+   必须开分支 → PR → 四个必需检查全绿 → 合并（只允许 Rebase and merge）；合并之后还要**人工触发一次发布**才会真正上线。
 
 ## 流程
 
